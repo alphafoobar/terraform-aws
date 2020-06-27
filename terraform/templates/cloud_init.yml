@@ -1,0 +1,21 @@
+#cloud-config
+repo_update: true
+repo_upgrade: all
+
+write_files:
+  - path: /etc/cloudwatch_agent.json
+    encoding: b64
+    owner: root:root
+    permissions: '0644'
+    content: ${cloudwatch_agent_configuration}
+  - path: /etc/ecs/ecs.config
+    permissions: 0644
+    owner: root
+    content: |
+      ECS_CLUSTER=${cluster_name}
+      ECS_AVAILABLE_LOGGING_DRIVERS=${log_drivers}
+      ECS_INSTANCE_ATTRIBUTES=${instance_attributes}
+runcmd:
+  - curl -O https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+  - rpm -U ./amazon-cloudwatch-agent.rpm
+  - /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/etc/cloudwatch_agent.json -s
